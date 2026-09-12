@@ -113,23 +113,28 @@ def generate():
         return jsonify({"error": "Prompt or messages array is required"}), 400
 
     try:
-        client = OpenAI(
-            base_url="https://integrate.api.nvidia.com/v1",
-            api_key=api_key
-        )
+        invoke_url = "https://integrate.api.nvidia.com/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
         
-        completion = client.chat.completions.create(
-            model="deepseek-ai/deepseek-v4-flash-0731",
-            messages=api_messages,
-            temperature=1,
-            top_p=0.95,
-            max_tokens=16384,
-            extra_body={"chat_template_kwargs": {"thinking": True, "reasoning_effort": "high"}},
-            stream=False
-        )
+        payload = {
+            "messages": api_messages,
+            "model": "moonshotai/kimi-k3",
+            "max_tokens": 16384,
+            "temperature": 1,
+            "stream": False,
+            "reasoning_effort": "max"
+        }
         
-        reasoning = getattr(completion.choices[0].message, "reasoning", None) or getattr(completion.choices[0].message, "reasoning_content", None)
-        content = completion.choices[0].message.content or ""
+        response = requests.post(invoke_url, headers=headers, json=payload)
+        if response.status_code != 200:
+            raise Exception(f"API Error: {response.text}")
+            
+        result = response.json()
+        content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
         
         full_response = content
 
