@@ -113,31 +113,30 @@ def generate():
         return jsonify({"error": "Prompt or messages array is required"}), 400
 
     try:
-        invoke_url = "https://integrate.api.nvidia.com/v1/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-        }
+        client = OpenAI(
+            base_url="https://integrate.api.nvidia.com/v1",
+            api_key=api_key
+        )
         
-        payload = {
-            "messages": api_messages,
-            "model": "meta/llama-3.1-70b-instruct",
-            "max_tokens": 8192,
-            "temperature": 0.7,
-            "stream": False
-        }
+        completion = client.chat.completions.create(
+            model="nvidia/nemotron-3.5-lightning-30b-a3b",
+            messages=api_messages,
+            temperature=1,
+            top_p=0.95,
+            max_tokens=16384,
+            extra_body={"chat_template_kwargs": {"enable_thinking": True}, "reasoning_budget": 16384},
+            stream=True
+        )
         
-        response = requests.post(invoke_url, headers=headers, json=payload)
-        if response.status_code != 200:
-            raise Exception(f"API Error: {response.text}")
-            
-        result = response.json()
-        content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
-        
-        full_response = content
+        def stream_generator():
+            for chunk in completion:
+                if not chunk.choices:
+                    continue
+                content = getattr(chunk.choices[0].delta, "content", None)
+                if content is not None:
+                    yield content
 
-        return Response(full_response, mimetype='text/plain')
+        return Response(stream_generator(), mimetype='text/plain')
         
     except Exception as e:
         import traceback
