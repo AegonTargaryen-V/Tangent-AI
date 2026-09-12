@@ -322,8 +322,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function callBackendApi(payload, textElement, onProgress = null, isMarkdown = false) {
         try {
-            const apiUrl = (window.ENV && window.ENV.API_URL) ? window.ENV.API_URL : 'http://localhost:5000';
-            const response = await fetch(`${apiUrl}/api/generate`, {
+            let apiUrl = (window.ENV && window.ENV.API_URL !== undefined) ? window.ENV.API_URL : 'http://localhost:5000';
+            // Automatically use relative path if deployed (not localhost and not file://)
+            if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && window.location.protocol !== 'file:') {
+                apiUrl = '';
+            }
+            const endpoint = apiUrl ? `${apiUrl}/api/generate` : '/api/generate';
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
