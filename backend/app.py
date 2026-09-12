@@ -122,11 +122,10 @@ def generate():
         
         payload = {
             "messages": api_messages,
-            "model": "moonshotai/kimi-k3",
-            "max_tokens": 16384,
-            "temperature": 1,
-            "stream": False,
-            "reasoning_effort": "max"
+            "model": "meta/llama-3.1-70b-instruct",
+            "max_tokens": 8192,
+            "temperature": 0.7,
+            "stream": False
         }
         
         response = requests.post(invoke_url, headers=headers, json=payload)
