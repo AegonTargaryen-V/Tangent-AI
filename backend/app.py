@@ -119,24 +119,25 @@ def generate():
         )
         
         completion = client.chat.completions.create(
-            model="nvidia/nemotron-3.5-lightning-30b-a3b",
+            model="deepseek-ai/deepseek-v4-flash-0731",
             messages=api_messages,
             temperature=1,
             top_p=0.95,
             max_tokens=16384,
-            extra_body={"chat_template_kwargs": {"enable_thinking": enable_thinking}},
-            stream=True
+            extra_body={"chat_template_kwargs": {"thinking": True, "reasoning_effort": "high"}},
+            stream=False
         )
         
-        iterator = iter(completion)
-        def generate_stream():
-            for chunk in iterator:
-                if not chunk.choices:
-                    continue
-                if chunk.choices[0].delta.content is not None:
-                    yield chunk.choices[0].delta.content
+        reasoning = getattr(completion.choices[0].message, "reasoning", None) or getattr(completion.choices[0].message, "reasoning_content", None)
+        content = completion.choices[0].message.content or ""
+        
+        if mode == 'debugger' and reasoning:
+            # Format the reasoning in a blockquote for the chat UI
+            full_response = f"> **Reasoning**\n> {reasoning.replace(chr(10), chr(10) + '> ')}\n\n{content}"
+        else:
+            full_response = content
 
-        return Response(generate_stream(), mimetype='text/plain')
+        return Response(full_response, mimetype='text/plain')
         
     except Exception as e:
         import traceback
