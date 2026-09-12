@@ -154,12 +154,31 @@ def generate():
         )
         
         def stream_generator():
+            reasoning_started = False
+            reasoning_ended = False
             for chunk in completion:
                 if not chunk.choices:
                     continue
-                # Reasoning is processed by the model but omitted from the response
+                
+                reasoning = getattr(chunk.choices[0].delta, "reasoning_content", None)
+                if reasoning:
+                    if not reasoning_started:
+                        if mode == 'generator':
+                            yield "# [AI Thinking Process]\n# "
+                        else:
+                            yield "> **Thinking...**\n> "
+                        reasoning_started = True
+                        
+                    if mode == 'generator':
+                        yield reasoning.replace('\n', '\n# ')
+                    else:
+                        yield reasoning.replace('\n', '\n> ')
+
                 content = getattr(chunk.choices[0].delta, "content", None)
                 if content is not None:
+                    if reasoning_started and not reasoning_ended:
+                        yield "\n\n"
+                        reasoning_ended = True
                     yield content
 
         return Response(stream_generator(), mimetype='text/plain')
