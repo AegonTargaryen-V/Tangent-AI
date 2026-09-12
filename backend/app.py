@@ -15,10 +15,48 @@ CORS(app, resources={r"/api/*": {"origins": cors_origins}})
 with open(os.path.join(os.path.dirname(__file__), "blender_api_ref.txt"), "r") as f:
     BLENDER_API_REF = f.read()
 
-with open(os.path.join(os.path.dirname(__file__), "texture.md"), "r") as f:
-    TEXTURE_LIBRARY = f.read()
 
-GENERATOR_SYSTEM_PROMPT = f"""You are an expert Blender 4.x/5.x Python (bpy) developer specialized in procedural materials.
+TEXTURES_DICT = {}
+with open(os.path.join(os.path.dirname(__file__), "texture.md"), "r") as f:
+    _curr_name = None
+    _curr_lines = []
+    for line in f:
+        if line.startswith("TEXTURE: "):
+            if _curr_name:
+                TEXTURES_DICT[_curr_name] = "".join(_curr_lines).strip()
+            _curr_name = line.replace("TEXTURE: ", "").strip().lower()
+            _curr_lines = []
+        elif _curr_name:
+            _curr_lines.append(line)
+    if _curr_name:
+        TEXTURES_DICT[_curr_name] = "".join(_curr_lines).strip()
+
+def get_relevant_textures(prompt):
+    import re
+    words = set(re.findall(r'\w+', prompt.lower()))
+    synonyms = {
+        "fabric": ["cloth", "textile", "material", "woven", "thread"],
+        "steel": ["metal", "metallic", "aluminum", "chrome", "silver"],
+        "rock": ["stone", "boulder", "pebble"],
+        "wood": ["timber", "oak", "pine", "plank", "lumber", "bark"],
+        "dirt": ["mud", "soil", "earth", "ground"],
+        "glass": ["window", "transparent", "crystal"]
+    }
+    matched = []
+    for key in TEXTURES_DICT.keys():
+        key_words = set(re.findall(r'\w+', key))
+        if key_words.issubset(words):
+            matched.append(key)
+            continue
+        if key in synonyms:
+            for syn in synonyms[key]:
+                if syn in words:
+                    matched.append(key)
+                    break
+    return matched
+
+def get_generator_prompt(lib_text):
+    return f"""You are an expert Blender 4.x/5.x Python (bpy) developer specialized in procedural materials.
 Your task is to translate natural language descriptions into optimized Blender Python shader node scripts.
 
 Follow these strict rules:
@@ -38,8 +76,7 @@ Follow these strict rules:
 
 {BLENDER_API_REF}
 
-PRE-DEFINED TEXTURE LIBRARY:
-{TEXTURE_LIBRARY}
+{lib_text}
 
 Example template:
 import bpy
@@ -64,7 +101,8 @@ def create_material():
 create_material()
 """
 
-DEBUGGER_SYSTEM_PROMPT = f"""You are a highly intelligent, conversational AI assistant specialized in debugging Blender 4.x/5.x Python (bpy) shader node scripts.
+def get_debugger_prompt(lib_text):
+    return f"""You are a highly intelligent, conversational AI assistant specialized in debugging Blender 4.x/5.x Python (bpy) shader node scripts.
 Your task is to help the user diagnose errors, explain concepts casually, and fix their procedural materials.
 
 Follow these strict rules:
@@ -82,8 +120,7 @@ Follow these strict rules:
 
 {BLENDER_API_REF}
 
-PRE-DEFINED TEXTURE LIBRARY:
-{TEXTURE_LIBRARY}
+{lib_text}
 """
 
 @app.route('/api/generate', methods=['POST'])
@@ -96,9 +133,33 @@ def generate():
     if not api_key:
         return jsonify({"error": "NVIDIA_API_KEY is not set"}), 500
 
-    mode = data.get('mode', 'generator')
-    current_system_prompt = DEBUGGER_SYSTEM_PROMPT if mode == 'debugger' else GENERATOR_SYSTEM_PROMPT
+        mode = data.get('mode', 'generator')
     enable_thinking = True if mode == 'debugger' else False
+
+    prompt = ""
+    if 'messages' in data and isinstance(data['messages'], list):
+        prompt = data['messages'][-1]['content']
+    elif 'prompt' in data:
+        prompt = data['prompt']
+        
+    prompt_lower = prompt.strip().lower()
+    
+    # EXACT MATCH (Instant return for exact predefined texture requests)
+    if mode == 'generator' and prompt_lower in TEXTURES_DICT:
+        def exact_match_stream():
+            yield TEXTURES_DICT[prompt_lower]
+        return Response(exact_match_stream(), mimetype='text/plain')
+
+    # DYNAMIC LIBRARY INJECTION
+    matched_keys = get_relevant_textures(prompt_lower)
+    if matched_keys:
+        dynamic_library = "\n\n".join([f"TEXTURE: {k}\n{TEXTURES_DICT[k]}" for k in matched_keys])
+        lib_text = f"PRE-DEFINED TEXTURE LIBRARY (Relevant to user request):\n{dynamic_library}"
+    else:
+        lib_names = ", ".join(TEXTURES_DICT.keys())
+        lib_text = f"AVAILABLE PRE-DEFINED TEXTURES (None match exactly, but here is what you know): {lib_names}"
+        
+    current_system_prompt = get_debugger_prompt(lib_text) if mode == 'debugger' else get_generator_prompt(lib_text)
 
     # Handle incoming chat history
     if 'messages' in data and isinstance(data['messages'], list):
