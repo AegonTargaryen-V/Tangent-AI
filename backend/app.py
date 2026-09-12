@@ -18,6 +18,20 @@ with open(os.path.join(os.path.dirname(__file__), "blender_api_ref.txt"), "r") a
 with open(os.path.join(os.path.dirname(__file__), "texture.md"), "r") as f:
     TEXTURE_LIBRARY = f.read()
 
+TEXTURES_DICT = {}
+_curr_name = None
+_curr_lines = []
+for line in TEXTURE_LIBRARY.split('\n'):
+    if line.startswith("TEXTURE: "):
+        if _curr_name:
+            TEXTURES_DICT[_curr_name] = "\n".join(_curr_lines).strip()
+        _curr_name = line.replace("TEXTURE: ", "").strip().lower()
+        _curr_lines = []
+    elif _curr_name:
+        _curr_lines.append(line)
+if _curr_name:
+    TEXTURES_DICT[_curr_name] = "\n".join(_curr_lines).strip()
+
 GENERATOR_SYSTEM_PROMPT = f"""You are an expert Blender 4.x/5.x Python (bpy) developer specialized in procedural materials.
 Your task is to translate natural language descriptions into optimized Blender Python shader node scripts.
 
@@ -100,6 +114,17 @@ def generate():
     current_system_prompt = DEBUGGER_SYSTEM_PROMPT if mode == 'debugger' else GENERATOR_SYSTEM_PROMPT
     enable_thinking = True if mode == 'debugger' else False
 
+    prompt = ""
+    if 'messages' in data and isinstance(data['messages'], list) and len(data['messages']) > 0:
+        prompt = data['messages'][-1].get('content', '')
+    elif 'prompt' in data:
+        prompt = data.get('prompt', '')
+        
+    prompt_lower = prompt.strip().lower()
+    
+    if mode == 'generator' and prompt_lower in TEXTURES_DICT:
+        return Response(TEXTURES_DICT[prompt_lower], mimetype='text/plain')
+
     # Handle incoming chat history
     if 'messages' in data and isinstance(data['messages'], list):
         api_messages = [{"role": "system", "content": current_system_prompt}] + data['messages']
@@ -124,7 +149,7 @@ def generate():
             temperature=1,
             top_p=0.95,
             max_tokens=16384,
-            extra_body={"chat_template_kwargs": {"thinking": True, "reasoning_effort": "high"}},
+            extra_body={"chat_template_kwargs": {"thinking": enable_thinking, "reasoning_effort": "high" if enable_thinking else "low"}},
             stream=False
         )
         
