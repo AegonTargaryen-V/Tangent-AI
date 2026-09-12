@@ -112,7 +112,7 @@ def generate():
 
     mode = data.get('mode', 'generator')
     current_system_prompt = DEBUGGER_SYSTEM_PROMPT if mode == 'debugger' else GENERATOR_SYSTEM_PROMPT
-    enable_thinking = True  # Nemotron is fast enough to always think
+    enable_thinking = True if mode == 'debugger' else False
 
     prompt = ""
     if 'messages' in data and isinstance(data['messages'], list) and len(data['messages']) > 0:
@@ -163,21 +163,18 @@ def generate():
                 reasoning = getattr(chunk.choices[0].delta, "reasoning_content", None)
                 if reasoning:
                     if not reasoning_started:
-                        if mode == 'generator':
-                            yield "# [AI Thinking Process]\n# "
-                        else:
+                        if mode == 'debugger':
                             yield "> **Thinking...**\n> "
                         reasoning_started = True
                         
-                    if mode == 'generator':
-                        yield reasoning.replace('\n', '\n# ')
-                    else:
+                    if mode == 'debugger':
                         yield reasoning.replace('\n', '\n> ')
 
                 content = getattr(chunk.choices[0].delta, "content", None)
                 if content is not None:
                     if reasoning_started and not reasoning_ended:
-                        yield "\n\n"
+                        if mode == 'debugger':
+                            yield "\n\n"
                         reasoning_ended = True
                     yield content
 
