@@ -112,7 +112,7 @@ def generate():
 
     mode = data.get('mode', 'generator')
     current_system_prompt = DEBUGGER_SYSTEM_PROMPT if mode == 'debugger' else GENERATOR_SYSTEM_PROMPT
-    enable_thinking = True if mode == 'debugger' else False
+    enable_thinking = True  # Nemotron is fast enough to always think
 
     prompt = ""
     if 'messages' in data and isinstance(data['messages'], list) and len(data['messages']) > 0:
@@ -144,21 +144,25 @@ def generate():
         )
         
         completion = client.chat.completions.create(
-            model="deepseek-ai/deepseek-v4-flash-0731",
+            model="nvidia/nemotron-3.5-lightning-30b-a3b",
             messages=api_messages,
             temperature=1,
             top_p=0.95,
             max_tokens=16384,
-            extra_body={"chat_template_kwargs": {"thinking": enable_thinking, "reasoning_effort": "high" if enable_thinking else "low"}},
-            stream=False
+            extra_body={"chat_template_kwargs": {"enable_thinking": enable_thinking}, "reasoning_budget": 16384},
+            stream=True
         )
         
-        reasoning = getattr(completion.choices[0].message, "reasoning", None) or getattr(completion.choices[0].message, "reasoning_content", None)
-        content = completion.choices[0].message.content or ""
-        
-        full_response = content
+        def stream_generator():
+            for chunk in completion:
+                if not chunk.choices:
+                    continue
+                # Reasoning is processed by the model but omitted from the response
+                content = getattr(chunk.choices[0].delta, "content", None)
+                if content is not None:
+                    yield content
 
-        return Response(full_response, mimetype='text/plain')
+        return Response(stream_generator(), mimetype='text/plain')
         
     except Exception as e:
         import traceback
