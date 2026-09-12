@@ -131,11 +131,7 @@ def generate():
         reasoning = getattr(completion.choices[0].message, "reasoning", None) or getattr(completion.choices[0].message, "reasoning_content", None)
         content = completion.choices[0].message.content or ""
         
-        if mode == 'debugger' and reasoning:
-            # Format the reasoning in a blockquote for the chat UI
-            full_response = f"> **Reasoning**\n> {reasoning.replace(chr(10), chr(10) + '> ')}\n\n{content}"
-        else:
-            full_response = content
+        full_response = content
 
         return Response(full_response, mimetype='text/plain')
         
