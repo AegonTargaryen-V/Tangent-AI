@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tangent AI - Texture Nodes for Blender</title>
+    <meta name="description" content="AI-powered procedural material generator for Blender 4.x.">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+</head>
+<body class="pre-launch">
+    <!-- SVG Filter for water ripple -->
+    <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
+        <filter id="water-ripple">
+            <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="3" result="noise">
+                <animate attributeName="baseFrequency" values="0.015;0.02;0.015" dur="4s" repeatCount="indefinite"/>
+            </feTurbulence>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+    </svg>
+
+    <div id="launch-overlay" class="launch-overlay">
+        <div class="launch-content">
+            <h1 class="launch-title">
+                <span class="letter">T</span><span class="letter">a</span><span class="letter">n</span><span class="letter">g</span><span class="letter">e</span><span class="letter">n</span><span class="letter">t</span><span class="space">&nbsp;</span><span class="letter ai">AI</span>
+            </h1>
+            <div class="launch-line"></div>
+        </div>
+    </div>
+    
+    <div class="app-layout">
+        <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle Sidebar">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <h2>Tangent AI</h2>
+                <p>Node Generator</p>
+            </div>
+            <nav class="sidebar-nav">
+                <button type="button" class="nav-btn active" data-target="page-home">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    Home
+                </button>
+                <button type="button" class="nav-btn" data-target="page-generator">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+                    Generator
+                </button>
+                <button type="button" class="nav-btn" data-target="page-debugger">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    Free Chat
+                </button>
+
+            </nav>
+        </aside>
+
+        <div class="main-content" id="main-content">
+            <div class="global-bg-blurred"></div>
+            <div class="global-bg-reveal"></div>
+            
+            <!-- HOME TAB -->
+            <main id="page-home" class="page-view active-page">
+                <div class="home-content-wrapper">
+                    <div class="home-hero">
+                    <h1 class="home-title">Welcome to <span class="accent">Tangent AI</span></h1>
+                    <p class="home-subtitle">The ultimate procedural material suite for Blender.</p>
+                </div>
+                <div class="home-cards-container">
+                    <button type="button" class="home-card" data-target="page-generator">
+                        <div class="card-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+                        </div>
+                        <h3>Generator</h3>
+                        <p>Create procedural materials from natural language descriptions.</p>
+                    </button>
+                    <button type="button" class="home-card" data-target="page-debugger">
+                        <div class="card-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </div>
+                        <h3>Free Chat</h3>
+                        <p>Chat freely, paste broken scripts, or ask any questions.</p>
+                    </button>
+
+                </div>
+                </div>
+            </main>
+
+            <!-- GENERATOR TAB (1-shot) -->
+            <main id="page-generator" class="page-view chatbot-layout" style="display: none;">
+                <div class="chat-history">
+                    <div id="gen-user-message-target"></div>
+                    <section id="gen-output-section-target" class="output-section chat-card" aria-live="polite" style="display: none;">
+                        <div class="output-header">
+                            <h2>Generated Script</h2>
+                            <div class="output-actions">
+                                <button type="button" id="gen-copy-btn" class="secondary-btn">Copy Code</button>
+                                <button type="button" id="gen-download-btn" class="secondary-btn">Download .py</button>
+                            </div>
+                        </div>
+                        <div class="code-workspace">
+                            <pre class="code-display"><code id="gen-code-output"></code></pre>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="chat-input-wrapper">
+                    <form id="generator-form" class="chat-form" style="display: flex; flex-direction: column; gap: 1rem; padding: 0.5rem;">
+                        <!-- Detached Custom Dropdown -->
+                        <div class="custom-dropdown-wrapper" id="custom-texture-dropdown">
+                            <div class="custom-dropdown-selected" tabindex="0">
+                                <span class="selected-text">✨ Choose a default texture library preset...</span>
+                                <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                            </div>
+                            <div class="custom-dropdown-options">
+                                <div class="custom-option" data-value="wood">Wood</div>
+                                <div class="custom-option" data-value="marble">Marble</div>
+                                <div class="custom-option" data-value="concrete">Concrete</div>
+                                <div class="custom-option" data-value="brick">Brick</div>
+                                <div class="custom-option" data-value="tiles">Tiles</div>
+                                <div class="custom-option" data-value="plaster">Plaster</div>
+                                <div class="custom-option" data-value="asphalt">Asphalt</div>
+                                <div class="custom-option" data-value="cobblestone">Cobblestone</div>
+                                <div class="custom-option" data-value="steel">Steel</div>
+                                <div class="custom-option" data-value="rusted iron">Rusted Iron</div>
+                                <div class="custom-option" data-value="gold">Gold</div>
+                                <div class="custom-option" data-value="galvanized_metal">Galvanized Metal</div>
+                                <div class="custom-option" data-value="glass">Glass</div>
+                                <div class="custom-option" data-value="plastic">Plastic</div>
+                                <div class="custom-option" data-value="rubber">Rubber</div>
+                                <div class="custom-option" data-value="wax">Wax</div>
+                                <div class="custom-option" data-value="rock">Rock</div>
+                                <div class="custom-option" data-value="mud">Mud</div>
+                                <div class="custom-option" data-value="sand">Sand</div>
+                                <div class="custom-option" data-value="ice">Ice</div>
+                                <div class="custom-option" data-value="water">Water</div>
+                                <div class="custom-option" data-value="moss">Moss</div>
+                                <div class="custom-option" data-value="fabric">Fabric</div>
+                                <div class="custom-option" data-value="leather">Leather</div>
+                                <div class="custom-option" data-value="scales">Scales</div>
+                                <div class="custom-option" data-value="cardboard">Cardboard</div>
+                            </div>
+                        </div>
+
+                        <!-- Chat Input (Textbox + Button) -->
+                        <div class="chat-input-container" style="align-items: flex-end; border-radius: var(--radius-md); padding: 0; padding-right: 0.5rem; background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <label for="gen-prompt-input" class="visually-hidden">Describe your material</label>
+                            <textarea id="gen-prompt-input" required placeholder="...Or describe a custom procedural material in detail" rows="3" style="flex: 1; resize: none; overflow-y: auto; padding: 1rem; border: none; background: transparent; color: var(--color-text); font-size: 0.95rem; outline: none; min-height: 80px;" oninput="this.style.height = '80px';this.style.height = this.scrollHeight + 'px'"></textarea>
+                            <button type="submit" id="gen-generate-btn" class="send-btn" aria-label="Generate Python Script" style="margin-bottom: 0.75rem;">
+                                <svg class="send-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                <span class="loader" aria-hidden="true" style="display: none;"></span>
+                            </button>
+                        </div>
+                        
+                        <div id="gen-error-message" class="error-message" role="alert" style="display: none;"></div>
+                    </form>
+                </div>
+            </main>
+
+            <!-- DEBUGGER TAB (Chatbot) -->
+            <main id="page-debugger" class="page-view chatbot-layout" style="display: none;">
+                <div class="chat-history" id="debug-chat-history">
+                    <div id="debug-chat-anchor"></div>
+                </div>
+
+                <div class="chat-input-wrapper">
+                    <form id="debugger-form" class="chat-form">
+                        <div class="chat-input-container">
+                            <label for="debug-prompt-input" class="visually-hidden">Paste errors here</label>
+                            <textarea id="debug-prompt-input" required placeholder="Paste your generated script and the Blender error..." rows="1" oninput="this.style.height = '';this.style.height = this.scrollHeight + 'px'"></textarea>
+                            <button type="submit" id="debug-generate-btn" class="send-btn" aria-label="Debug Script">
+                                <svg class="send-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                <span class="loader" aria-hidden="true" style="display: none;"></span>
+                            </button>
+                        </div>
+                        <div id="debug-error-message" class="error-message" role="alert" style="display: none;"></div>
+                    </form>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="env.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

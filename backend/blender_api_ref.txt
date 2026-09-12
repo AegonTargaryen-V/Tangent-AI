@@ -1,0 +1,492 @@
+=== BLENDER 5.x SHADER NODE REGISTRY & SYNTAX REFERENCE ===
+Usage: nodes.new(type="<IDNAME>")
+Rule 1: Never use ShaderNodeTexMusgrave (replaced by ShaderNodeTexNoise).
+Rule 2: Never use ShaderNodeMixRGB (use ShaderNodeMix with data_type='RGBA').
+Rule 3: Always link using: links.new(node_source.outputs["<Output>"], node_target.inputs["<Input>"])
+
+--------------------------------------------------------------------------------
+1. OUTPUT NODES
+--------------------------------------------------------------------------------
+IDNAME: ShaderNodeOutputMaterial
+Inputs:
+  - "Surface" (Shader)
+  - "Volume" (Shader)
+  - "Displacement" (Vector)
+  - "Thickness" (Float)
+Outputs: None
+
+IDNAME: ShaderNodeOutputWorld
+Inputs:
+  - "Surface" (Shader)
+  - "Volume" (Shader)
+Outputs: None
+
+IDNAME: ShaderNodeOutputAOV
+Inputs:
+  - "Color" (Color)
+  - "Value" (Float)
+Outputs: None
+Properties: name (String)
+
+--------------------------------------------------------------------------------
+2. SHADER NODES (BSDFs & VOLUMES)
+--------------------------------------------------------------------------------
+IDNAME: ShaderNodeBsdfPrincipled
+Inputs:
+  - "Base Color" (Color, default=(0.8, 0.8, 0.8, 1.0))
+  - "Metallic" (Float 0.0-1.0)
+  - "Roughness" (Float 0.0-1.0, default=0.5)
+  - "IOR" (Float, default=1.5)
+  - "Alpha" (Float 0.0-1.0, default=1.0)
+  - "Normal" (Vector)
+  - "Diffuse Roughness" (Float 0.0-1.0)
+  - "Subsurface Weight" (Float 0.0-1.0)
+  - "Subsurface Radius" (Vector, default=(1.0, 0.2, 0.1))
+  - "Subsurface Scale" (Float)
+  - "Subsurface IOR" (Float, default=1.4)
+  - "Subsurface Anisotropy" (Float 0.0-1.0)
+  - "Specular IOR Level" (Float 0.0-1.0, default=0.5)
+  - "Specular Tint" (Color, default=(1.0, 1.0, 1.0, 1.0))
+  - "Anisotropic" (Float 0.0-1.0)
+  - "Anisotropic Rotation" (Float 0.0-1.0)
+  - "Tangent" (Vector)
+  - "Transmission Weight" (Float 0.0-1.0)
+  - "Coat Weight" (Float 0.0-1.0)
+  - "Coat Roughness" (Float 0.0-1.0)
+  - "Coat IOR" (Float, default=1.5)
+  - "Coat Tint" (Color, default=(1.0, 1.0, 1.0, 1.0))
+  - "Coat Normal" (Vector)
+  - "Sheen Weight" (Float 0.0-1.0)
+  - "Sheen Roughness" (Float 0.0-1.0)
+  - "Sheen Tint" (Color, default=(1.0, 1.0, 1.0, 1.0))
+  - "Emission Color" (Color, default=(1.0, 1.0, 1.0, 1.0))
+  - "Emission Strength" (Float, default=0.0)
+Outputs:
+  - "BSDF" (Shader)
+
+IDNAME: ShaderNodeEmission
+Inputs:
+  - "Color" (Color)
+  - "Strength" (Float)
+Outputs:
+  - "Emission" (Shader)
+
+IDNAME: ShaderNodeBsdfDiffuse
+Inputs:
+  - "Color" (Color)
+  - "Roughness" (Float)
+  - "Normal" (Vector)
+Outputs:
+  - "BSDF" (Shader)
+
+IDNAME: ShaderNodeBsdfGlass
+Inputs:
+  - "Color" (Color)
+  - "Roughness" (Float)
+  - "IOR" (Float)
+  - "Normal" (Vector)
+Outputs:
+  - "BSDF" (Shader)
+
+IDNAME: ShaderNodeBsdfTransparent
+Inputs:
+  - "Color" (Color)
+Outputs:
+  - "BSDF" (Shader)
+
+IDNAME: ShaderNodeBsdfTranslucent
+Inputs:
+  - "Color" (Color)
+  - "Normal" (Vector)
+Outputs:
+  - "BSDF" (Shader)
+
+IDNAME: ShaderNodeMixShader
+Inputs:
+  - "Fac" (Float 0.0-1.0)
+  - "Shader" (Index 1, Shader)
+  - "Shader" (Index 2, Shader)
+Outputs:
+  - "Shader" (Shader)
+
+IDNAME: ShaderNodeAddShader
+Inputs:
+  - "Shader" (Shader)
+  - "Shader" (Shader)
+Outputs:
+  - "Shader" (Shader)
+
+IDNAME: ShaderNodeVolumePrincipled
+Inputs:
+  - "Color" (Color)
+  - "Density" (Float)
+  - "Anisotropy" (Float)
+  - "Absorption Color" (Color)
+  - "Emission Strength" (Float)
+  - "Emission Color" (Color)
+  - "Blackbody Intensity" (Float)
+  - "Blackbody Tint" (Color)
+  - "Temperature" (Float)
+Outputs:
+  - "Volume" (Shader)
+
+--------------------------------------------------------------------------------
+3. PROCEDURAL TEXTURE NODES
+--------------------------------------------------------------------------------
+IDNAME: ShaderNodeTexNoise
+Inputs:
+  - "Vector" (Vector)
+  - "W" (Float, 4D mode)
+  - "Scale" (Float)
+  - "Detail" (Float)
+  - "Roughness" (Float)
+  - "Lacunarity" (Float)
+  - "Distortion" (Float)
+Outputs:
+  - "Fac" (Float)
+  - "Color" (Color)
+Properties:
+  - noise_dimensions = '1D' | '2D' | '3D' | '4D'
+  - normalize = True | False
+
+IDNAME: ShaderNodeTexVoronoi
+Inputs:
+  - "Vector" (Vector)
+  - "W" (Float, 4D mode)
+  - "Scale" (Float)
+  - "Detail" (Float)
+  - "Roughness" (Float)
+  - "Lacunarity" (Float)
+  - "Randomness" (Float)
+Outputs:
+  - "Distance" (Float)
+  - "Color" (Color)
+  - "Position" (Vector)
+Properties:
+  - voronoi_dimensions = '1D' | '2D' | '3D' | '4D'
+  - feature = 'F1' | 'F2' | 'SMOOTH_F1' | 'DISTANCE_TO_EDGE' | 'N_SPHERE_RADIUS'
+  - distance = 'EUCLIDEAN' | 'MANHATTAN' | 'CHEBYCHEV' | 'MINKOWSKI'
+
+IDNAME: ShaderNodeTexWave
+Inputs:
+  - "Vector" (Vector)
+  - "Scale" (Float)
+  - "Distortion" (Float)
+  - "Detail" (Float)
+  - "Detail Scale" (Float)
+  - "Detail Roughness" (Float)
+  - "Phase Offset" (Float)
+Outputs:
+  - "Color" (Color)
+  - "Fac" (Float)
+Properties:
+  - wave_type = 'BANDS' | 'RINGS'
+  - bands_direction = 'X' | 'Y' | 'Z' | 'DIAGONAL'
+  - wave_profile = 'SIN' | 'SAW' | 'TRI'
+
+IDNAME: ShaderNodeTexBrick
+Inputs:
+  - "Vector" (Vector)
+  - "Color1" (Color)
+  - "Color2" (Color)
+  - "Mortar" (Color)
+  - "Scale" (Float)
+  - "Mortar Size" (Float)
+  - "Mortar Smooth" (Float)
+  - "Bias" (Float)
+  - "Brick Width" (Float)
+  - "Row Height" (Float)
+Outputs:
+  - "Color" (Color)
+  - "Fac" (Float)
+
+IDNAME: ShaderNodeTexGradient
+Inputs:
+  - "Vector" (Vector)
+Outputs:
+  - "Color" (Color)
+  - "Fac" (Float)
+Properties:
+  - gradient_type = 'LINEAR' | 'QUADRATIC' | 'EASING' | 'DIAGONAL' | 'SPHERICAL' | 'RADIAL'
+
+IDNAME: ShaderNodeTexChecker
+Inputs:
+  - "Vector" (Vector)
+  - "Color1" (Color)
+  - "Color2" (Color)
+  - "Scale" (Float)
+Outputs:
+  - "Color" (Color)
+  - "Fac" (Float)
+
+IDNAME: ShaderNodeTexWhiteNoise
+Inputs:
+  - "Vector" (Vector)
+  - "W" (Float)
+Outputs:
+  - "Value" (Float)
+  - "Color" (Color)
+Properties:
+  - noise_dimensions = '1D' | '2D' | '3D' | '4D'
+
+--------------------------------------------------------------------------------
+4. COLOR & CONVERSION NODES
+--------------------------------------------------------------------------------
+IDNAME: ShaderNodeValToRGB (Color Ramp)
+Inputs:
+  - "Fac" (Float)
+Outputs:
+  - "Color" (Color)
+  - "Alpha" (Float)
+Accessing Elements in bpy:
+  - node.color_ramp.interpolation = 'LINEAR' | 'CONSTANT' | 'EASE' | 'B_SPLINE'
+  - node.color_ramp.elements[0].position = 0.0
+  - node.color_ramp.elements[0].color = (r, g, b, a)
+  - node.color_ramp.elements.new(position=0.5)
+
+IDNAME: ShaderNodeMix (Universal Mix)
+Inputs (RGBA mode):
+  - "Factor" (Float)
+  - "A" (Color)
+  - "B" (Color)
+Outputs:
+  - "Result" (Color)
+Properties:
+  - data_type = 'RGBA' | 'FLOAT' | 'VECTOR'
+  - blend_type = 'MIX' | 'DARKEN' | 'MULTIPLY' | 'BURN' | 'LIGHTEN' | 'SCREEN' | 'DODGE' | 'ADD' | 'OVERLAY' | 'SOFT_LIGHT' | 'LINEAR_LIGHT' | 'DIFFERENCE' | 'SUBTRACT' | 'DIVIDE'
+  - clamp_factor = True | False
+
+IDNAME: ShaderNodeRGBToBW
+Inputs:
+  - "Color" (Color)
+Outputs:
+  - "Val" (Float)
+
+IDNAME: ShaderNodeInvert
+Inputs:
+  - "Fac" (Float)
+  - "Color" (Color)
+Outputs:
+  - "Color" (Color)
+
+IDNAME: ShaderNodeHueSaturation
+Inputs:
+  - "Hue" (Float 0.0-1.0, default=0.5)
+  - "Saturation" (Float, default=1.0)
+  - "Value" (Float, default=1.0)
+  - "Fac" (Float, default=1.0)
+  - "Color" (Color)
+Outputs:
+  - "Color" (Color)
+
+IDNAME: ShaderNodeCombineColor
+Inputs:
+  - "Red" (Float) / "Hue" (Float)
+  - "Green" (Float) / "Saturation" (Float)
+  - "Blue" (Float) / "Value" (Float)
+Outputs:
+  - "Color" (Color)
+Properties:
+  - mode = 'RGB' | 'HSV' | 'HSL'
+
+IDNAME: ShaderNodeSeparateColor
+Inputs:
+  - "Color" (Color)
+Outputs:
+  - "Red" (Float) / "Hue" (Float)
+  - "Green" (Float) / "Saturation" (Float)
+  - "Blue" (Float) / "Value" (Float)
+Properties:
+  - mode = 'RGB' | 'HSV' | 'HSL'
+
+--------------------------------------------------------------------------------
+5. VECTOR & COORDINATE NODES
+--------------------------------------------------------------------------------
+IDNAME: ShaderNodeTexCoord
+Inputs: None
+Outputs:
+  - "Generated" (Vector)
+  - "Normal" (Vector)
+  - "UV" (Vector)
+  - "Object" (Vector)
+  - "Camera" (Vector)
+  - "Window" (Vector)
+  - "Reflection" (Vector)
+
+IDNAME: ShaderNodeMapping
+Inputs:
+  - "Vector" (Vector)
+  - "Location" (Vector)
+  - "Rotation" (Vector)
+  - "Scale" (Vector, default=(1.0, 1.0, 1.0))
+Outputs:
+  - "Vector" (Vector)
+Properties:
+  - vector_type = 'POINT' | 'TEXTURE' | 'VECTOR' | 'NORMAL'
+
+IDNAME: ShaderNodeBump
+Inputs:
+  - "Strength" (Float, default=1.0)
+  - "Distance" (Float, default=1.0)
+  - "Height" (Float)
+  - "Normal" (Vector)
+Outputs:
+  - "Normal" (Vector)
+Properties:
+  - invert = True | False
+
+IDNAME: ShaderNodeNormalMap
+Inputs:
+  - "Strength" (Float, default=1.0)
+  - "Color" (Color)
+Outputs:
+  - "Normal" (Vector)
+Properties:
+  - space = 'TANGENT' | 'OBJECT' | 'WORLD'
+  - uv_map = "" (String)
+
+IDNAME: ShaderNodeDisplacement
+Inputs:
+  - "Height" (Float)
+  - "Midlevel" (Float, default=0.5)
+  - "Scale" (Float, default=1.0)
+  - "Normal" (Vector)
+Outputs:
+  - "Displacement" (Vector)
+Properties:
+  - space = 'OBJECT' | 'WORLD'
+
+IDNAME: ShaderNodeVectorMath
+Inputs:
+  - "Vector" (Vector) [First input]
+  - "Vector" (Vector) [Second input]
+  - "Scale" (Float) [For SCALE operation]
+Outputs:
+  - "Vector" (Vector)
+  - "Value" (Float)
+Properties:
+  - operation = 'ADD' | 'SUBTRACT' | 'MULTIPLY' | 'DIVIDE' | 'CROSS_PRODUCT' | 'PROJECT' | 'REFLECT' | 'DOT_PRODUCT' | 'DISTANCE' | 'LENGTH' | 'SCALE' | 'NORMALIZE' | 'ABSOLUTE' | 'MINIMUM' | 'MAXIMUM' | 'FLOOR' | 'CEIL' | 'FRACTION' | 'MODULO' | 'SINE' | 'COSINE'
+
+IDNAME: ShaderNodeCombineXYZ
+Inputs:
+  - "X" (Float)
+  - "Y" (Float)
+  - "Z" (Float)
+Outputs:
+  - "Vector" (Vector)
+
+IDNAME: ShaderNodeSeparateXYZ
+Inputs:
+  - "Vector" (Vector)
+Outputs:
+  - "X" (Float)
+  - "Y" (Float)
+  - "Z" (Float)
+
+--------------------------------------------------------------------------------
+6. MATH, LOGIC & UTILITY NODES
+--------------------------------------------------------------------------------
+IDNAME: ShaderNodeMath
+Inputs:
+  - "Value" (Float) [First input]
+  - "Value" (Float) [Second input]
+Outputs:
+  - "Value" (Float)
+Properties:
+  - operation = 'ADD' | 'SUBTRACT' | 'MULTIPLY' | 'DIVIDE' | 'MULTIPLY_ADD' | 'POWER' | 'LOGARITHM' | 'SQRT' | 'ABSOLUTE' | 'MINIMUM' | 'MAXIMUM' | 'LESS_THAN' | 'GREATER_THAN' | 'SIGN' | 'ROUND' | 'FLOOR' | 'CEIL' | 'TRUNC' | 'FRACT' | 'MODULO' | 'PINGPONG' | 'SINE' | 'COSINE' | 'TANGENT' | 'SMOOTH_MIN' | 'SMOOTH_MAX'
+  - use_clamp = True | False
+
+IDNAME: ShaderNodeMapRange
+Inputs:
+  - "Value" (Float)
+  - "From Min" (Float, default=0.0)
+  - "From Max" (Float, default=1.0)
+  - "To Min" (Float, default=0.0)
+  - "To Max" (Float, default=1.0)
+  - "Steps" (Float)
+Outputs:
+  - "Result" (Float)
+Properties:
+  - data_type = 'FLOAT' | 'FLOAT_VECTOR'
+  - interpolation_type = 'LINEAR' | 'STEPPED' | 'SMOOTHSTEP' | 'SMOOTHERSTEP'
+  - clamp = True | False
+
+IDNAME: ShaderNodeClamp
+Inputs:
+  - "Value" (Float)
+  - "Min" (Float, default=0.0)
+  - "Max" (Float, default=1.0)
+Outputs:
+  - "Result" (Float)
+
+IDNAME: ShaderNodeValue
+Inputs: None
+Outputs:
+  - "Value" (Float)
+Assignment: node.outputs[0].default_value = float_value
+
+IDNAME: ShaderNodeRGB
+Inputs: None
+Outputs:
+  - "Color" (Color)
+Assignment: node.outputs[0].default_value = (r, g, b, a)
+
+IDNAME: ShaderNodeFresnel
+Inputs:
+  - "IOR" (Float, default=1.45)
+  - "Normal" (Vector)
+Outputs:
+  - "Fac" (Float)
+
+IDNAME: ShaderNodeLayerWeight
+Inputs:
+  - "Blend" (Float, default=0.5)
+  - "Normal" (Vector)
+Outputs:
+  - "Fresnel" (Float)
+  - "Facing" (Float)
+
+IDNAME: ShaderNodeBevel
+Inputs:
+  - "Radius" (Float, default=0.05)
+  - "Normal" (Vector)
+Outputs:
+  - "Normal" (Vector)
+Properties:
+  - samples = 4 to 16
+
+IDNAME: ShaderNodeAmbientOcclusion
+Inputs:
+  - "Color" (Color)
+  - "Distance" (Float)
+  - "Normal" (Vector)
+Outputs:
+  - "Color" (Color)
+  - "AO" (Float)
+Properties:
+  - samples = 16
+  - only_local = True | False
+
+IDNAME: ShaderNodeNewGeometry
+Inputs: None
+Outputs:
+  - "Position" (Vector)
+  - "Normal" (Vector)
+  - "Tangent" (Vector)
+  - "True Normal" (Vector)
+  - "Incoming" (Vector)
+  - "Parametric" (Vector)
+  - "Backfacing" (Float)
+  - "Pointiness" (Float)
+  - "Random Per Island" (Float)
+
+IDNAME: ShaderNodeObjectInfo
+Inputs: None
+Outputs:
+  - "Location" (Vector)
+  - "Color" (Color)
+  - "Alpha" (Float)
+  - "Object Index" (Float)
+  - "Material Index" (Float)
+  - "Random" (Float)
+================================================================================
