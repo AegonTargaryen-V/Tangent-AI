@@ -1,4 +1,5 @@
 {
+  "name": "tangent-ai",
   "builds": [
     {
       "src": "backend/app.py",
